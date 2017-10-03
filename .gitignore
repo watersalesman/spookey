@@ -31,4 +31,4 @@
 *.out
 *.app
 *spookey
-*key.log
+*.log
