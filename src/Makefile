@@ -1,2 +1,2 @@
 spookey: spookey.cc spookey.hh
-	g++ -o spookey -lpthread spookey.cc
+	g++ -g -O3 -o spookey -lpthread spookey.cc
