@@ -1,5 +1,10 @@
+PACKAGE = spookey
+CPP = g++
+CPPFLAGS = -g -O3
+LIBS = -lpthread
+
 spookey: spookey.cc spookey.hh
-	g++ -g -O3 -o spookey -lpthread spookey.cc
+	$(CPP) $(CPPFLAGS) -o $(PACKAGE) $(LIBS) $(PACKAGE).cc
 
 clean:
-	rm *.log spookey
+	rm -f *.log $(PACKAGE)
