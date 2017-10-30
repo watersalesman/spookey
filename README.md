@@ -16,3 +16,10 @@ I will also eventually work on a Windows executable using the Windows API. I do
 not plan on making a method of exfiltration anytime soon (at least not built in).
 For the time being, this will be developed as a module of sorts to be used with
 other software.
+
+Demo
+---
+
+Capturing keystrokes from a separate process (separate tmux pane in this case):
+
+<a href="https://asciinema.org/a/AFxCijfeYyUzpKBne2ziVWWjB" target="_blank"><img src="https://asciinema.org/a/AFxCijfeYyUzpKBne2ziVWWjB.png" width="75%" /></a>
