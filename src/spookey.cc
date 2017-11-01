@@ -1,11 +1,9 @@
 #include <string>
 #include <vector>
 #include <pthread.h>
-
 #include "spookey.hh"
 
 int main() {
-
     // Find keyboards
     std::vector<Keyboard> keyboards = findKeyboards();
     int numKeyboards = keyboards.size();
