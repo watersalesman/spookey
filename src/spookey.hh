@@ -30,7 +30,9 @@ class Keyboard {
     std::string captureLog;
     int deviceFile;
 
-    Keyboard() {
+    Keyboard(std::string devPath, std::string capLog) {
+        devicePath = devPath;
+        captureLog = capLog;
         deviceFile = -1;
     }
 
@@ -83,9 +85,7 @@ std::vector<Keyboard> findKeyboards()
         // If device description matches the regex pattern, push onto vector
         std::regex keyboardNamePattern(".*[Kk]eyboard.*");
         if (std::regex_match(deviceInfo, keyboardNamePattern)) {
-            Keyboard keyboard;
-            keyboard.devicePath = devicePath;
-            keyboard.captureLog = deviceName + ".log";;
+            Keyboard keyboard(devicePath, deviceName + ".log");
             keyboards.push_back(keyboard);
         }
 
