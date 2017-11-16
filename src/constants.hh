@@ -3,7 +3,7 @@
 const std::string INPUT_DEVICE_DIR = "/dev/input/";
 const std::string EVENT_DEVICE_NAME = "event";
 
-const std::string keys[] = {
+const char* keys[] = {
     "<reserved>", "<esc>", "1", "2",
     "3", "4", "5", "6",
     "7", "8", "9", "0",
@@ -11,14 +11,14 @@ const std::string keys[] = {
     "Q", "W", "E", "R",
     "T", "Y", "U", "I",
     "O", "P", "{",	"}",
-    "<enter>", "<l-ctrl", "A", "S",
+    "<enter>", "<l-ctrl>", "A", "S",
     "D", "F", "G", "H",
     "J", "K", "L", ";",
     "'", "`", "<l-shift>", "\\",
     "Z", "X", "C", "V",
     "B", "N", "M", ",",
     ".", "/", "<r-shift>", "*",
-   "<l-alt>", "<space>", "<capslock", "F1",
+   "<l-alt>", "<space>", "<capslock>", "F1",
     "F2", "F3", "F4", "F5",
     "F6", "F7", "F8", "F9",
     "F10", "<numlock>", "<scrolllock>", "KP7",
