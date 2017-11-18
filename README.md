@@ -17,6 +17,15 @@ not plan on making a method of exfiltration anytime soon (at least not built in)
 For the time being, this will be developed as a module of sorts to be used with
 other software.
 
+Usage
+---
+```
+$ git clone https://github.com/watersalesman/spookey
+$ cd spookey/src
+$ make
+$ sudo ./spookey # Optionally use "--debug" flag
+```
+
 Demo
 ---
 

