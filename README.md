@@ -1,6 +1,6 @@
 # SpooKey
 
-SpooKey is a multithreaded keylogger written in C++ that uses kernel-level APIs
+SpooKey is a keylogger written in C++ that uses kernel-level APIs
 to capture keystrokes
 
 Overview
@@ -8,7 +8,7 @@ Overview
 
 The Linux binary uses the Linux Input Subsystem kernel API to identify
 keyboards located in `/dev/input/` and to translate key events. Threads
-will spawn to record each keyboard. Key events are written to a file
+will spawn to record each keyboard found. Key events are written to a file
 corresponding to the input device name. E.g., `event0.log` for
 `/dev/input/event0`.
 
