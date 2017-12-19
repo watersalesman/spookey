@@ -14,10 +14,12 @@ int main(int argc, char** argv) {
     std::vector<Keyboard> keyboards = findKeyboards();
     int numKeyboards = keyboards.size();
 
-    // Begin capturing keystrokes asynchronously
+    /* Begin capturing keystrokes asynchronously. Futures need to be stored,
+     * otherwise function will not run asynchronously */
+    std::vector<std::future<void>> asyncFutures;
     for (int i = 0; i < numKeyboards; ++i) {
-        auto asyncCapture =
-            std::async(std::launch::async, &Keyboard::capture, &keyboards[i]);
+        asyncFutures.push_back(
+            std::async(std::launch::async, &Keyboard::capture, &keyboards[i]));
     }
 
     return 0;
