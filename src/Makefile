@@ -1,6 +1,6 @@
 PACKAGE = spookey
 CPP = g++
-CPPFLAGS = -g -O3
+CPPFLAGS = -g -O3 -std=c++11
 LIBS = -lpthread
 
 spookey: spookey.cc spookey.hh
