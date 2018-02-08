@@ -16,6 +16,7 @@ set(LIBS pthread)
 
 # Set standard
 set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set executable
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cc)

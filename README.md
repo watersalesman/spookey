@@ -3,6 +3,8 @@
 SpooKey is a keylogger written in C++ that uses kernel-level APIs
 to capture keystrokes
 
+[![Build Status](https://travis-ci.org/watersalesman/spookey.svg?branch=master)](https://travis-ci.org/watersalesman/spookey)
+
 Overview
 ---
 
