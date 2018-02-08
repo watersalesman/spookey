@@ -6,6 +6,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
+# Set compiler if CXX is defined
+if($ENV{CXX})
+    set(CMAKE_CXX_COMPILER $ENV{CXX})
+endif($ENV{CXX})
+
 # Set libraries
 set(LIBS pthread)
 
