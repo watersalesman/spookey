@@ -24,6 +24,7 @@ Usage
 ```
 $ git clone https://github.com/watersalesman/spookey
 $ cd spookey/src
+$ cmake .
 $ make
 $ sudo ./spookey # Optionally use "--debug" flag
 ```
