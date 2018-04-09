@@ -16,15 +16,12 @@ int main(int argc, char** argv) {
 
     // Begin capturing keystrokes asynchronously
     std::vector<std::future<void>> captureTasks;
-    for (auto& kbd : keyboards) {
+    for (auto& kbd : keyboards)
         captureTasks.push_back(
             std::async(std::launch::async, &Keyboard::capture, &kbd));
-    }
 
     // Do not exit unless all captures terminate
-    for (const auto& task : captureTasks) {
-        task.wait();
-    }
+    for (const auto& task : captureTasks) task.wait();
 
     return 0;
 }
